@@ -1,4 +1,16 @@
-import React, { Component, createRef } from "react";
+import { 
+  type ForwardedRef, 
+  type HTMLAttributes, 
+  type Ref, 
+  type RefObject, 
+  forwardRef, 
+  useCallback, 
+  useEffect, 
+  useMemo, 
+  useRef 
+} from "react";
+
+import { v1 } from "./types";
 
 // Import JQuery, required for the functioning of the equation editor
 import $ from "jquery";
@@ -14,87 +26,122 @@ window.jQuery = $;
 // @ts-ignore
 require("mathquill/build/mathquill");
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
-// eslint-disable-next-line no-undef
 const mathQuill = MathQuill.getInterface(2);
 
-type EquationEditorProps = {
-  onChange(latex: string): void;
-  value: string;
-  spaceBehavesLikeTab?: boolean;
-  autoCommands: string;
-  autoOperatorNames: string;
-  onEnter?(): void;
+export type EquationEditorMathField = v1.EditableMathQuill;
+export type EquationEditorConfig = v1.Config;
+
+export type EquationEditorConfigProperty = Omit<EquationEditorConfig, 'handlers'>;
+export type EquationEditorHandlersProperty = EquationEditorConfig['handlers'];
+
+export type EquationEditorProps = Omit<HTMLAttributes<HTMLSpanElement>, 'children' | 'value' | 'onChange'> & {
+  value?: string;
+  onChange?: (value: string) => void;
+
+  config?: EquationEditorConfigProperty;
+  handlers?: EquationEditorHandlersProperty;
+
+  mathFieldActionRef?: Ref<EquationEditorMathField>;
 };
 
-/**
- * @typedef {EquationEditorProps} props
- * @prop {Function} onChange Triggered when content of the equation editor changes
- * @prop {string} value Content of the equation handler
- * @prop {boolean}[false] spaceBehavesLikeTab Whether spacebar should simulate tab behavior
- * @prop {string} autoCommands List of commands for which you only have to type the name of the
- * command with a \ in front of it. Examples: pi theta rho sum
- * @prop {string} autoOperatorNames List of operators for which you only have to type the name of the
- * operator with a \ in front of it. Examples: sin cos tan
- * @prop {Function} onEnter Triggered when enter is pressed in the equation editor
- * @extends {Component<EquationEditorProps>}
- */
-class EquationEditor extends Component<EquationEditorProps> {
-  element: any;
-  mathField: any;
-  ignoreEditEvents: number;
+const EquationEditorBase = (
+  {
+    value,
+    onChange,
 
-  // Element needs to be in the class format and thus requires a constructor. The steps that are run
-  // in the constructor is to make sure that React can succesfully communicate with the equation
-  // editor.
-  constructor(props: EquationEditorProps) {
-    super(props);
+    config,
+    handlers,
+    
+    mathFieldActionRef,
 
-    this.element = createRef();
-    this.mathField = null;
+    ...props
+  }: EquationEditorProps,
+  forwardedRef: ForwardedRef<HTMLSpanElement>
+) => {
+  const mathFieldRef = useRef<EquationEditorMathField | null>(null);
 
-    // MathJax apparently fire 2 edit events on startup.
-    this.ignoreEditEvents = 2;
-  }
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
-  componentDidMount() {
-    const {
-      onChange,
-      value,
-      spaceBehavesLikeTab,
-      autoCommands,
-      autoOperatorNames,
-      onEnter,
-    } = this.props;
+  const ignoreEditEventsRef = useRef(2);
 
-    const config = {
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+    
+    if (!mathFieldRef.current) {
+      return;
+    }
+
+    if (mathFieldRef.current.latex() !== value) {
+      mathFieldRef.current.latex(value ?? '');
+    }
+  }, [value]);
+
+  const createConfig = useCallbackRef((): EquationEditorConfig => {
+    return {
+      ...config,
       handlers: {
-        edit: () => {
-          if (this.ignoreEditEvents > 0) {
-            this.ignoreEditEvents -= 1;
+        ...handlers,
+        edit: (mq) => {
+          const currentIgnoreEditEvents = ignoreEditEventsRef.current;
+          if (currentIgnoreEditEvents > 0) {
+            ignoreEditEventsRef.current -= 1;
             return;
           }
-          if (this.mathField.latex() !== value) {
-            onChange(this.mathField.latex());
+
+          const mathField = mathFieldRef.current;
+          if (!mathField) {
+            return;
           }
+
+          const currentValue = valueRef.current;
+          if (mathField.latex() !== currentValue) {
+            onChangeRef.current?.(mathField.latex());
+          }
+
+          handlers?.edit?.(mq);
         },
-        enter: onEnter,
-      },
-      spaceBehavesLikeTab,
-      autoCommands,
-      autoOperatorNames,
+      }
     };
+  });
 
-    this.mathField = mathQuill.MathField(this.element.current, config);
-    this.mathField.latex(value || "");
-  }
+  const elementRefCallback = useCallback((element: HTMLSpanElement | null) => {
+    if (!element) return;
 
-  render() {
-    return (
-      <span ref={this.element} style={{ border: "0px", boxShadow: "None" }} />
-    );
+    assignRef(element, forwardedRef);
+
+    const mathField = mathQuill.MathField(element, createConfig());
+    mathField.latex(valueRef.current ?? '');
+    mathFieldRef.current = mathField;
+
+    assignRef(mathField, mathFieldActionRef);
+  }, []);
+
+  return <span ref={elementRefCallback} {...props} />;
+};
+
+function assignRef<Value>(
+  value: Value, 
+  refObjectOrCallback: ((instance: Value | null) => void) | RefObject<Value | null> | null | undefined
+) {
+  if (typeof refObjectOrCallback === 'function') {
+    refObjectOrCallback(value);
+  } else if (refObjectOrCallback) {
+    refObjectOrCallback.current = value;
   }
 }
+
+function useCallbackRef<T extends (...args: any[]) => any>(callback: T | undefined): T {
+	const callbackRef = useRef(callback);
+
+	useEffect(() => {
+		callbackRef.current = callback;
+	});
+
+	return useMemo(() => ((...args) => callbackRef.current?.(...args)) as T, []);
+}
+
+const EquationEditor = forwardRef(EquationEditorBase);
 
 export default EquationEditor;
