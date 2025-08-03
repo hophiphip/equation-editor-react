@@ -25,6 +25,7 @@ export default [
         sourcemap: true,
       },
     ],
+    external: ["mathquill", "jquery", "mathquill/build/mathquill.css"],
     plugins: [
       external(),
       resolve(),
