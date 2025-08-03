@@ -4,6 +4,7 @@
   "description": "Equation editor based on Mathquill for React web apps",
   "main": "lib/index.js",
   "module": "lib/index.es.js",
+  "types": "lib/index.d.ts",
   "jsnext:main": "lib/index.es.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

@@ -1,46 +1,45 @@
-import typescript from "rollup-plugin-typescript2";
-import commonjs from "rollup-plugin-commonjs";
+import resolve from "@rollup/plugin-node-resolve";
 import external from "rollup-plugin-peer-deps-external";
-import scss from "rollup-plugin-scss";
+import commonjs from "@rollup/plugin-commonjs";
+import terser from "@rollup/plugin-terser";
+import dts from "rollup-plugin-dts";
+import typescript from "@rollup/plugin-typescript";
+import styles from 'rollup-plugin-styles';
 
 import pkg from "./package.json";
 
-export default {
-  input: "src/index.tsx",
-  output: [
-    {
-      file: pkg.main,
-      format: "cjs",
-      exports: "named",
-      sourcemap: true,
-    },
-    {
-      file: pkg.module,
-      format: "es",
-      exports: "named",
-      sourcemap: true,
-    },
-  ],
-  external: ["mathquill", "jquery", "mathquill/build/mathquill.css"], // dependencies
-  plugins: [
-    external(),
-    scss(),
-    typescript({
-      rollupCommonJSResolveHack: true,
-      exclude: "**/__tests__/**",
-      clean: true,
-    }),
-    commonjs({
-      include: ["node_modules/**"],
-      namedExports: {
-        "node_modules/react/react.js": [
-          "Children",
-          "Component",
-          "PropTypes",
-          "createElement",
-        ],
-        "node_modules/react-dom/index.js": ["render"],
+export default [
+  {
+    input: "src/index.tsx",
+    output: [
+      {
+        file: pkg.main,
+        format: "cjs",
+        exports: "named",
+        sourcemap: true,
       },
-    }),
-  ],
-};
+      {
+        file: pkg.module,
+        format: "es",
+        exports: "named",
+        sourcemap: true,
+      },
+    ],
+    plugins: [
+      external(),
+      resolve(),
+      commonjs(),
+      typescript({
+        tsconfig: "./tsconfig.json",
+      }),
+      styles(),
+      terser(),
+    ]
+  },
+  {
+    input: "./lib/types/index.d.ts",
+    output: [{ file: pkg.types, format: "esm" }],
+    external: [/\.css$/],
+    plugins: [dts()],
+  }
+];
