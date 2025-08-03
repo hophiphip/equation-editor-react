@@ -34,6 +34,11 @@ export type EquationEditorConfig = v1.Config;
 export type EquationEditorConfigProperty = Omit<EquationEditorConfig, 'handlers'>;
 export type EquationEditorHandlersProperty = EquationEditorConfig['handlers'];
 
+// Props from previous implementation to prevent breaking users code after an update
+export type EquationEditorBackwardsCompProps = Pick<EquationEditorConfig, 'spaceBehavesLikeTab' | 'autoCommands' | 'autoOperatorNames'> & {
+  onEnter?: () => void;
+};
+
 export type EquationEditorProps = Omit<HTMLAttributes<HTMLSpanElement>, 'children' | 'value' | 'onChange'> & {
   value?: string;
   onChange?: (value: string) => void;
@@ -42,7 +47,7 @@ export type EquationEditorProps = Omit<HTMLAttributes<HTMLSpanElement>, 'childre
   handlers?: EquationEditorHandlersProperty;
 
   mathFieldActionRef?: Ref<EquationEditorMathField>;
-};
+} & EquationEditorBackwardsCompProps;
 
 const EquationEditorBase = (
   {
@@ -53,6 +58,11 @@ const EquationEditorBase = (
     handlers,
     
     mathFieldActionRef,
+
+    spaceBehavesLikeTab,
+    autoCommands,
+    autoOperatorNames,
+    onEnter,
 
     ...props
   }: EquationEditorProps,
@@ -80,8 +90,12 @@ const EquationEditorBase = (
 
   const createConfig = useCallbackRef((): EquationEditorConfig => {
     return {
+      spaceBehavesLikeTab,
+      autoCommands,
+      autoOperatorNames,
       ...config,
       handlers: {
+        enter: onEnter,
         ...handlers,
         edit: (mq) => {
           const currentIgnoreEditEvents = ignoreEditEventsRef.current;

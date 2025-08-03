@@ -1,5 +1,5 @@
 // 
-// Type definitions for mathquil.
+// Type definitions for mathquill.
 // Reference: https://github.com/mathquill/mathquill/blob/1cbc1c4128ec87db3733bc99965522f7d62cde75/src/mathquill.d.ts
 // 
 
