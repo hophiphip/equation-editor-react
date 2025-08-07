@@ -9,6 +9,7 @@
     "start": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest",
+    "preview": "vite preview",
     "rebuild": "rm -rf node_modules && rm -f yarn.lock && yarn"
   },
   "eslintConfig": {
@@ -43,6 +44,7 @@
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^4.7.0",
+    "minimatch": "^10.0.3",
     "tsc": "^2.0.4",
     "typescript": "^5.9.2",
     "vite": "^7.0.6",

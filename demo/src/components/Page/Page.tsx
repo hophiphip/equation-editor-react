@@ -1,4 +1,4 @@
-import React, { useState, CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 
 // Import Equation Editor component --------------------------------------
 
