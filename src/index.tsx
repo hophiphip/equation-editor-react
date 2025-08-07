@@ -12,19 +12,11 @@ import {
 
 import { v1 } from "./types";
 
-// Import JQuery, required for the functioning of the equation editor
-import $ from "jquery";
-
 // Import the styles from the Mathquill editor
 import "mathquill/build/mathquill.css";
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
-window.jQuery = $;
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
-require("mathquill/build/mathquill");
+import './jquery';
+import './mathquill';
 
 const mathQuill = MathQuill.getInterface(2);
 
