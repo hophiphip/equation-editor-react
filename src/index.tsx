@@ -138,7 +138,7 @@ function assignRef<Value>(
   }
 }
 
-function useCallbackRef<T extends (...args: any[]) => any>(callback: T | undefined): T {
+function useCallbackRef<T extends (...args: Parameters<T>) => ReturnType<T>>(callback: T | undefined): T {
 	const callbackRef = useRef(callback);
 
 	useEffect(() => {
